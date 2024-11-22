@@ -2,26 +2,31 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 )
 
 func main() {
+	http.HandleFunc("/", handleRequest)
+	fmt.Println("Server is running on http://localhost:8080")
+	http.ListenAndServe(":8080", nil)
+}
 
-	// Fetch top 500 anime from Jikan API
-	// AnimeFetcher() // Capitalized function name
-
-	// Load the saved anime data from file
-	animeData, err := LoadAnimeData("top_500_anime.json") // Capitalized function name
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+	// Load anime data from file
+	animeData, err := LoadAnimeData("top_500_anime.json")
 	if err != nil {
-		fmt.Printf("Error loading anime data: %v\n", err)
+		http.Error(w, fmt.Sprintf("Error loading anime data: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Print the loaded data
-	// fmt.Println("Loaded Anime Data:")
-	// for _, anime := range animeData {
-	// 	fmt.Printf("Title: %-80s Score: %.2f\n", anime.Title, anime.Score)
-	// }
+	// Get the anime title from query parameters
+	animeTitle := r.URL.Query().Get("anime")
+	if animeTitle == "" {
+		http.Error(w, "Please provide an anime title using the 'anime' query parameter.", http.StatusBadRequest)
+		return
+	}
 
+	// Prepare features
 	allFeatures := prepareFeatures(animeData)
 	weights := map[string]float64{
 		"score":       0.05,
@@ -31,26 +36,22 @@ func main() {
 		"studios":     0.1,
 	}
 
-	// Encode features
 	encodedFeatures := encodeFeatures(allFeatures, weights)
 
-	// Print encoded features in a formatted way
-	// fmt.Println("Encoded Features:")
-	// for i, encodedFeature := range encodedFeatures {
-	// 	fmt.Printf("Anime %d: %.2f\n", i+1, encodedFeature)
-	// }
+	// Find the index of the anime
+	animeIndex := getAnimeIndex(animeTitle, animeData)
+	if animeIndex == -1 {
+		http.Error(w, fmt.Sprintf("Anime '%s' not found in the database.", animeTitle), http.StatusNotFound)
+		return
+	}
 
-	// Anime index and k neighbors
-	animeIndex := getAnimeIndex("Sousou no Frieren", animeData)
+	// Get recommendations
 	k := 4
-
-	// Get recommendations for the given animeIndex
 	recommendations := findRecommendations(encodedFeatures, animeIndex, k)
 
 	// Output the recommendations
-	fmt.Println("Recommendations for Anime", animeData[animeIndex].Title)
+	fmt.Fprintf(w, "Recommendations for Anime: %v\n", animeData[animeIndex].Title)
 	for _, recommendation := range recommendations {
-		fmt.Printf("Recommended Anime: %v\n", animeData[recommendation].Title)
+		fmt.Fprintf(w, "Recommended Anime: %v\n", animeData[recommendation].Title)
 	}
-
 }
