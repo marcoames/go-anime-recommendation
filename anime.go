@@ -108,9 +108,23 @@ type Anime struct {
 
 func getAnimeIndex(animeName string, animeData []Anime) int {
 	for i, anime := range animeData {
-		// Compare anime names, case insensitive
+		// Compare the default title
 		if strings.EqualFold(anime.Title, animeName) {
-			return i // Return the index of the found anime
+			return i
+		}
+		// Compare the English title
+		if strings.EqualFold(anime.TitleEnglish, animeName) {
+			return i
+		}
+		// Compare the Japanese title
+		if strings.EqualFold(anime.TitleJapanese, animeName) {
+			return i
+		}
+		// Compare all synonyms
+		for _, synonym := range anime.TitleSynonyms {
+			if strings.EqualFold(synonym, animeName) {
+				return i
+			}
 		}
 	}
 	// Return -1 if no anime with the specified name is found

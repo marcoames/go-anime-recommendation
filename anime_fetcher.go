@@ -10,8 +10,8 @@ func AnimeFetcher() {
 	client := NewJikanClient()
 
 	var allAnime []map[string]interface{}
-	for page := 1; page <= 10; page++ { // Each page returns 50 results; 10 pages for top 500 anime.
-		fmt.Printf("Fetching page %d...\n", page)
+	for page := 1; page <= 50; page++ { // Each page returns 50 results.
+		fmt.Printf("\rFetching page %d...", page)
 		topAnime, err := client.FetchTopAnime(page)
 		if err != nil {
 			fmt.Printf("Error fetching top anime: %v\n", err)
@@ -23,12 +23,12 @@ func AnimeFetcher() {
 		time.Sleep(1 * time.Second)
 	}
 
-	// Save the top 500 anime to a file.
-	filename := "top_500_anime.json"
+	// save data to a JSON file
+	filename := "anime_data.json"
 	if err := SaveToFile(allAnime, filename); err != nil {
 		fmt.Printf("Error saving data to file: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Top 500 anime saved to %s\n", filename)
+	fmt.Printf("Anime saved to %s\n", filename)
 }

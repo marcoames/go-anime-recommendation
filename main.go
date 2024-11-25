@@ -6,14 +6,17 @@ import (
 )
 
 func main() {
+	// Fetch and save anime data
+	// AnimeFetcher()
+
 	http.HandleFunc("/", handleRequest)
-	// fmt.Println("Server is running on http://localhost:8080")
+	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", nil)
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Load anime data from file
-	animeData, err := LoadAnimeData("top_500_anime.json")
+	animeData, err := LoadAnimeData("anime_data.json")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error loading anime data: %v", err), http.StatusInternalServerError)
 		return
