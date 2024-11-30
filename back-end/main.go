@@ -13,9 +13,8 @@ func main() {
 	// Enable CORS
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"https://anime-recommendation-443301.rj.r.appspot.com",
-			"https://my-frontend-dot-anime-recommendation-443301.rj.r.appspot.com", // Deployed frontend
-			"http://localhost:3000", // Local React development
+			"https://animerecommendation-443313.rj.r.appspot.com", // Deployed frontend
+			"http://localhost:3000",                               // Local React development
 		},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"}, // Allow these HTTP methods
 		AllowedHeaders: []string{"Content-Type"},           // Allow Content-Type header
