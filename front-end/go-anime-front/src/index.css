@@ -1,0 +1,198 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: #1a1a1a; /* Dark grey background for the whole page */
+  color: #e0e0e0; /* Light grey text for the whole page */
+}
+
+/* General container styling */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  background-color: #2a2a2a; /* Dark grey background */
+  color: #e0e0e0; /* Light grey text color for contrast */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Darker shadow */
+}
+
+/* Header styling */
+h1 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #e0e0e0; /* Light grey header text */
+}
+
+/* Input field and button styling */
+input[type="text"] {
+  padding: 10px;
+  width: 70%;
+  font-size: 1rem;
+  border: 1px solid #444; /* Darker border for inputs */
+  border-radius: 4px;
+  margin-right: 10px;
+  background-color: #333; /* Dark background for inputs */
+  color: #e0e0e0; /* Light text inside input */
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  width: 260px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+/* Error message styling */
+.error {
+  color: #ff4d4d;
+  font-size: 1.2rem;
+  margin-top: 20px;
+  text-align: center;
+}
+
+
+/* -------------------- Anime Details section styling  --------------------*/
+.anime-details {
+  background-color: #333; /* Dark background for anime details */
+  padding: 20px;
+  margin-top: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Darker shadow */
+}
+
+.anime-details img {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.anime-details h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-top: 15px;
+  color: #e0e0e0; /* Light grey text */
+}
+
+.anime-details p {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #bbb; /* Lighter text color for the details */
+}
+
+.anime-details strong {
+  color: #ddd; /* Slightly lighter text */
+}
+
+.anime-details a {
+  color: #bbb; /* Change link color to #bbb */
+  text-decoration: none; /* Remove underline */
+}
+
+.anime-details a:hover {
+  color: #e0e0e0; /* Optional: Change color on hover */
+  text-decoration: underline; /* Optional: Add underline on hover */
+}
+
+
+
+
+
+/* -------------------- Recommendations section styling  --------------------*/
+
+
+.recommendations {
+  margin-top: 40px;
+}
+
+.recommendations h3 {
+  font-size: 1.6rem;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #e0e0e0; /* Light grey for headings */
+}
+
+.recommendations ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.recommendations li {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #333; /* Dark background for list items */
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Darker shadow */
+}
+
+.recommendations a {
+  color: #bbb; /* Change link color to #bbb */
+  text-decoration: none; /* Remove underline */
+}
+
+.recommendations a:hover {
+  color: #e0e0e0; /* Optional: Change color on hover */
+  text-decoration: underline; /* Optional: Add underline on hover */
+}
+
+.anime-info {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.image-container {
+  flex: 0 0 180px;
+  margin-right: 20px;
+}
+
+.anime-info img {
+  border-radius: 8px;
+}
+
+.more-details {
+  font-size: 1rem;
+}
+
+.more-details p {
+  margin: 5px 0;
+  margin-bottom: 5px;
+  color: #bbb;
+}
+
+.more-details strong {
+  color: #ddd;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .recommendations li {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .anime-info {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .image-container {
+    margin-bottom: 10px;
+  }
+
+  .more-details {
+    margin-top: 10px;
+  }
+}
