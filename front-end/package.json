@@ -1,5 +1,6 @@
 {
-  "name": "go-anime-front",
+  "name": "front-end",
+  "homepage": "https://anime-recommendation-443301.rj.r.appspot.com",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

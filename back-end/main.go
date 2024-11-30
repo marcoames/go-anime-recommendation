@@ -10,9 +10,13 @@ import (
 
 func main() {
 
-	// Enable CORS for localhost:3000 (React frontend)
+	// Enable CORS
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000"},  // Allow your React frontend
+		AllowedOrigins: []string{
+			"https://anime-recommendation-443301.rj.r.appspot.com",
+			"https://my-frontend-dot-anime-recommendation-443301.rj.r.appspot.com", // Deployed frontend
+			"http://localhost:3000", // Local React development
+		},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"}, // Allow these HTTP methods
 		AllowedHeaders: []string{"Content-Type"},           // Allow Content-Type header
 	})
@@ -21,7 +25,7 @@ func main() {
 	// AnimeFetcher()
 
 	// Handle the request with your handler function
-	http.HandleFunc("/", handleRequest)
+	http.HandleFunc("/api/", handleRequest)
 
 	// Wrap your handler with the CORS handler
 	handler := corsHandler.Handler(http.DefaultServeMux)
@@ -49,11 +53,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Prepare features
 	allFeatures := prepareFeatures(animeData)
 	weights := map[string]float64{
-		"score":       0.05,
-		"popularity":  0.01,
-		"genres":      1,
-		"demographic": 0.1,
-		"studios":     0.1,
+		"score":       0.3, // slightly higher for quality-based recommendations
+		"popularity":  0.2, // moderate for trending recommendations
+		"genres":      1,   // prioritize genres for better personalization
+		"demographic": 0.1, // keeps demographic in consideration
+		"studios":     0.2, // moderate studio influence
 	}
 
 	encodedFeatures := encodeFeatures(allFeatures, weights)

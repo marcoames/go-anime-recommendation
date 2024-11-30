@@ -1,0 +1,7 @@
+runtime: go123
+instance_class: F2
+service: my-backend
+
+handlers:
+  - url: /api/.*
+    script: auto

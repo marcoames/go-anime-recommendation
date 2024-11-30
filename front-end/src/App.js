@@ -10,7 +10,7 @@ function App() {
   const handleSearch = async () => {
     try {
       // Send request to the Go backend
-      const response = await fetch(`http://localhost:8080/?anime=${animeTitle}`);
+      const response = await fetch(`https://anime-recommendation-443301.rj.r.appspot.com/api/?anime=${animeTitle}`);
       
       // If the response is not OK, throw an error
       if (!response.ok) {
@@ -19,6 +19,8 @@ function App() {
 
       // Parse the JSON response
       const data = await response.json();
+
+      console.log(data);
 
       // Set anime details (e.g., title, image, genres)
       setAnimeDetails(data.anime);
