@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./back-end
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: always
+    command: ["./main"]  # Normal server mode
+
+  fetcher:
+    build: ./back-end
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: ["./main", "-fetch"]  # Fetch mode
+    profiles:
+      - fetcher
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  mongodb_data: 
