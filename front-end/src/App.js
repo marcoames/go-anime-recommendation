@@ -11,7 +11,8 @@ function App() {
     try {
       // Send request to the Go backend
       //const response = await fetch(`https://animerecommendation-443313.rj.r.appspot.com/api/?anime=${animeTitle}`);
-      const response = await fetch(`http://localhost:8080/api/?anime=${animeTitle}`);
+      // const response = await fetch(`http://localhost:8080/api/?anime=${animeTitle}`);
+      const response = await fetch(`https://go-anime-recommendation.onrender.com:8080/api/?anime=${animeTitle}`);
       // If the response is not OK, throw an error
       if (!response.ok) {
         throw new Error('Anime not found');
