@@ -7,7 +7,7 @@ services:
     autoDeploy: true
     envVars:
       - key: REACT_APP_API_URL
-        value: https://api.onrender.com  # or use Render’s internal hostname after first deploy
+        value: https://api.onrender.com
 
   - type: web
     name: api
