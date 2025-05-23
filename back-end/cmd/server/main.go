@@ -67,13 +67,18 @@ func main() {
 
 	// Setup CORS 
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			"https://go-anime-recommendation-1.onrender.com", // No trailing slash
-			"http://localhost:3000",
-		},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
+	    AllowedOrigins: []string{
+	        "https://go-anime-recommendation-1.onrender.com",
+	        "http://localhost:3000",
+	    },
+	    AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	    AllowedHeaders: []string{
+	        "Content-Type", "Authorization", "X-Requested-With",
+	    },
+	    ExposedHeaders: []string{"Content-Length"},
+	    AllowCredentials: true,
+	    OptionsPassthrough: false,
+	    Debug: true,
 	})
 
 	// Setup routes
