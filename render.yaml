@@ -14,7 +14,6 @@ services:
     env: docker
     plan: free
     dockerfilePath: ./back-end/Dockerfile
-    startCommand: './main'
     autoDeploy: true
     envVars:
       - key: MONGODB_URI
@@ -24,8 +23,7 @@ services:
     name: fetcher
     env: docker
     plan: free
-    dockerfilePath: ./back-end/Dockerfile
-    startCommand: './main -fetch'
+    dockerfilePath: ./back-end/Dockerfile.fetcher
     autoDeploy: true
     envVars:
       - key: MONGODB_URI
