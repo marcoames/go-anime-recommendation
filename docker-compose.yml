@@ -11,7 +11,7 @@ services:
       mongodb:
         condition: service_healthy
     restart: always
-    command: ["./main"]  # Normal server mode
+    command: ["./main"]
 
   fetcher:
     build: ./back-end
@@ -20,9 +20,17 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-    command: ["./main", "-fetch"]  # Fetch mode
+    command: ["./main", "-fetch"]
     profiles:
       - fetcher
+
+  frontend:
+    build: ./front-end
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: always
 
   mongodb:
     image: mongo:latest
@@ -38,4 +46,4 @@ services:
     restart: always
 
 volumes:
-  mongodb_data: 
+  mongodb_data:
