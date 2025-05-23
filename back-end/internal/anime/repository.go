@@ -1,83 +1,57 @@
-package anime
+package main
 
 import (
-	"context"
-	"fmt"
-	"strings"
-	"time"
+	"flag"
+	"log"
+	"net/http"
+	"os"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/marcoames/go-anime-recommendation/internal/anime"
+	"github.com/marcoames/go-anime-recommendation/internal/api"
+	"github.com/rs/cors"
 )
 
-type Repository struct {
-	collection *mongo.Collection
-}
+func main() {
+	fetch := flag.Bool("fetch", false, "Fetch anime data before starting server")
+	flag.Parse()
 
-func NewRepository(uri string) (*Repository, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		log.Fatal("MONGODB_URI environment variable is required")
+	}
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	repo, err := anime.NewRepository(mongoURI)
 	if err != nil {
-		return nil, err
+		log.Fatalf("Failed to create repository: %v", err)
 	}
 
-	collection := client.Database("anime").Collection("animes")
-	return &Repository{collection: collection}, nil
-}
+	if *fetch {
+		log.Println("Fetching anime data...")
+		if err := anime.FetchAndSaveAnime(repo); err != nil {
+			log.Fatalf("Failed to fetch anime: %v", err)
+		}
+		log.Println("Fetch complete")
+		return
+	}
 
-func (r *Repository) LoadAnimeData() ([]Anime, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	cursor, err := r.collection.Find(ctx, bson.M{})
+	handler, err := api.NewHandler(mongoURI)
 	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var animes []Anime
-	if err = cursor.All(ctx, &animes); err != nil {
-		return nil, err
+		log.Fatalf("Failed to create handler: %v", err)
 	}
 
-	return animes, nil
-}
+	// Enable CORS
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"https://go-anime-recommendation-1.onrender.com", // Fixed: removed trailing slash
+			"http://localhost:3000", // Local React development
+		},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"}, // Allow these HTTP methods
+		AllowedHeaders: []string{"Content-Type"},           // Allow Content-Type header
+	})
 
-func (r *Repository) SaveAnimeData(animes []Anime) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	http.HandleFunc("/api/", handler.HandleRequest)
+	wrappedHandler := corsHandler.Handler(http.DefaultServeMux)
 
-	// Convert animes to interface{} for bulk write
-	var documents []interface{}
-	for _, anime := range animes {
-		documents = append(documents, anime)
-	}
-
-	// Clear existing data
-	if err := r.collection.Drop(ctx); err != nil {
-		return err
-	}
-
-	// Insert new data
-	_, err := r.collection.InsertMany(ctx, documents)
-	return err
-}
-
-func (r *Repository) GetAnimeIndex(animeTitle string, animeData []Anime) (int, error) {
-	for i, anime := range animeData {
-		if strings.EqualFold(anime.Title, animeTitle) ||
-			strings.EqualFold(anime.TitleEnglish, animeTitle) ||
-			strings.EqualFold(anime.TitleJapanese, animeTitle) {
-			return i, nil
-		}
-		for _, synonym := range anime.TitleSynonyms {
-			if strings.EqualFold(synonym, animeTitle) {
-				return i, nil
-			}
-		}
-	}
-	return -1, fmt.Errorf("Anime '%s' not found", animeTitle)
+	log.Println("Server is running on port 8080...")
+	log.Fatal(http.ListenAndServe(":8080", wrappedHandler))
 }
