@@ -18,7 +18,7 @@ services:
     autoDeploy: true
     envVars:
       - key: MONGODB_URI
-        value: mongodb://mongodb:27017
+        value: "mongodb+srv://marcoames:${MONGO_PASS}@animecluster.amhc7lk.mongodb.net/?retryWrites=true&w=majority&appName=AnimeCluster"
 
   - type: worker
     name: fetcher
@@ -29,11 +29,4 @@ services:
     autoDeploy: true
     envVars:
       - key: MONGODB_URI
-        value: mongodb://mongodb:27017
-
-  - type: worker
-    name: mongodb
-    env: docker
-    plan: free
-    image: mongo:latest
-    autoDeploy: false
+        value: "mongodb+srv://marcoames:${MONGO_PASS}@animecluster.amhc7lk.mongodb.net/?retryWrites=true&w=majority&appName=AnimeCluster"
