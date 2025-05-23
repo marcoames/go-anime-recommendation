@@ -1,79 +1,88 @@
-# Anime Recommendation System
+# Sistema de Recomendação de Anime
 
-A Go-based web service that provides personalized anime recommendations using content-based filtering and cosine similarity.
+Um serviço web baseado em Go que fornece recomendações personalizadas de anime usando filtragem baseada em conteúdo e similaridade de cosseno.
 
-## Overview
+## Visão Geral
 
-This project is an anime recommendation system that fetches data from the Jikan API (MyAnimeList unofficial API) and provides personalized anime recommendations based on various features including genres, demographics, studios, popularity, and scores.
+Este projeto é um sistema de recomendação de anime que obtém dados da Jikan API (API não oficial do MyAnimeList) e fornece recomendações personalizadas com base em diversos recursos, incluindo gêneros, demografias, estúdios, popularidade e pontuações.
 
-## Features
+## Funcionalidades
 
-- **Anime Data Collection**: Automatically fetches and stores anime data from the Jikan API.
-- **Content-Based Recommendations**: Uses cosine similarity to find similar anime based on multiple features.
-- **RESTful API**: Simple HTTP endpoint for getting anime recommendations.
-- **MongoDB Integration**: Persistent storage of anime data.
-- **Docker Support**: Easy deployment using Docker containers.
+- **Coleta de Dados de Anime**: Busca e armazena automaticamente dados de anime da Jikan API.
+- **Recomendações Baseadas em Conteúdo**: Usa similaridade de cosseno para encontrar animes semelhantes com base em múltiplos recursos.
+- **API RESTful**: Endpoint HTTP simples para obter recomendações de anime.
+- **Integração com MongoDB:**: Armazenamento persistente dos dados de anime.
+- **Suporte a Docker**:  Implantação facilitada usando contêineres Docker.
+- **Frontend em React**: Interface amigável para buscar e exibir recomendações de anime.
 
-## Architecture
+## Arquitetura
 
-The project consists of two main services:
+O projeto consiste nos seguintes serviços:
 
-1. **API Service**: Handles incoming HTTP requests and serves recommendations.
-2. **Fetcher Service**: Periodically updates the anime database with fresh data.
+1. **Serviço de API**: Lida com requisições HTTP e fornece recomendações.
+2. **Serviço de Coleta (Fetcher)**: Atualiza o banco de dados de anime com informações recentes.
+3. **Frontend React**: Fornece uma UI interativa para os usuários buscarem animes e visualizarem recomendações.
 
-## Technical Stack
+## Stack Técnica
 
 - **Backend**: Go (Golang)
-- **Database**: MongoDB
-- **Container**: Docker
+- **Frontend**: React.js
+- **Banco de Dados**: MongoDB
+- **Contêiner**: Docker
 - **API**: RESTful HTTP endpoints
-- **External API**: Jikan API (MyAnimeList)
+- **API Externa**: Jikan API (MyAnimeList)
 
-## API Usage
+## Uso da API
 
-Send a GET request to get recommendations:
+Envie uma requisição GET para obter recomendações:
 
 ```http
 GET /api/?anime=<anime_title>
 ````
-Example response
+Exemplo de resposta
 ```json
 {
   "anime": {
-    "title": "Your searched anime",
+    "title": "Anime buscado",
     "...": "..."
   },
   "recommendations": [
     {
-      "title": "Recommended anime 1",
+      "title": "Anime recomendado 1",
       "...": "..."
     },
     {
-      "title": "Recommended anime 2",
+      "title": "Anime recomendado 2",
       "...": "..."
     }
   ]
 }
 ```
 
-## How to run 
-```bash
-docker-compose run fetcher
-docker-compose up api -d
-```
+## Como Funciona
 
-## How it works
+1. O serviço de coleta obtém dados de anime da Jikan API.
 
-1. The fetcher service collects anime data from the Jikan API.
+2. Os dados são armazenados no MongoDB para acesso rápido.
 
-2. Data is stored in MongoDB for quick access.
+3. Quando uma requisição é recebida, o sistema:
 
-3. When a request comes in, the system:
+    - Extrai recursos (gêneros, estúdios, etc.).
 
-    - Extracts features (genres, studios, etc.).
+    - Aplica pesos a diferentes recursos.
 
-    - Applies weights to different features.
+    - Usa similaridade de cosseno para encontrar animes semelhantes.
 
-    - Uses cosine similarity to find similar anime.
+    - Retorna os 4 animes mais similares como recomendações.
 
-    - Returns the top 4 most similar recommendations.
+
+## Implantação
+
+O aplicativo está implantado e acessível via Render:
+
+**Frontend (React)**: https://go-anime-recommendation-1.onrender.com/
+
+**Backend (API)**: https://go-anime-recommendation.onrender.com/
+
+Sinta-se à vontade para visitar o link do frontend e testar o sistema de recomendação de anime interativamente.
+

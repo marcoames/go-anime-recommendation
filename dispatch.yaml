@@ -1,8 +1,0 @@
-dispatch:
-  # Route all API requests to the backend service
-  - url: "/api/*"
-    service: my-backend
-
-  # Route all other requests to the frontend service
-  - url: "/*"
-    service: default
