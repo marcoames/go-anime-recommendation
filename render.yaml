@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: frontend
+    env: docker
+    plan: free
+    dockerfilePath: ./front-end/Dockerfile
+    buildCommand: ''
+    startCommand: ''
+    autoDeploy: true
+    envVars:
+      - key: REACT_APP_API_URL
+        value: http://api:8080  # Internal Docker DNS
+
+  - type: private-service
+    name: api
+    env: docker
+    plan: free
+    dockerfilePath: ./back-end/Dockerfile
+    buildCommand: ''
+    startCommand: './main'
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb://mongodb:27017
+
+  - type: worker
+    name: fetcher
+    env: docker
+    plan: free
+    dockerfilePath: ./back-end/Dockerfile
+    buildCommand: ''
+    startCommand: './main -fetch'
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb://mongodb:27017
+
+  - type: private-service
+    name: mongodb
+    env: docker
+    plan: free
+    image: mongo:latest
+    autoDeploy: false
