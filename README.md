@@ -78,7 +78,7 @@ Exemplo de resposta
 
 ## Implantação
 
-O aplicativo está implantado e acessível via Render:
+O sistema está implantado e acessível via Render:
 
 **Frontend (React)**: https://go-anime-recommendation-1.onrender.com/
 
