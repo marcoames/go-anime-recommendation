@@ -98,4 +98,5 @@ type Anime struct {
 	Type          string    `json:"type"`
 	URL           string    `json:"url"`
 	Year          int       `json:"year"`
+	Themes        []Info    `bson:"themes" json:"themes"`
 }
