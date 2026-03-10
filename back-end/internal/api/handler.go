@@ -37,16 +37,16 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prepare features
-	allFeatures := recommendation.PrepareFeatures(animeData)
 	weights := map[string]float64{
-		"score":       0.3, // slightly higher for quality-based recommendations
-		"popularity":  0.2, // moderate for trending recommendations
-		"genres":      1,   // prioritize genres for better personalization
-		"demographic": 0.1, // keeps demographic in consideration
-		"studios":     0.2, // moderate studio influence
+		"score":       0.1,
+		"popularity":  0.15,
+		"genres":      1.5,
+		"demographic": 1.0,
+		"themes":      1.2,
+		"studios":     0.1,
 	}
 
-	encodedFeatures := recommendation.EncodeFeatures(allFeatures, weights)
+	encodedFeatures := recommendation.EncodeWithOneHot(animeData, weights)
 
 	// Find the index of the anime
 	animeIndex, err := h.animeRepo.GetAnimeIndex(animeTitle, animeData)
@@ -57,13 +57,9 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get recommendations
 	k := 4
-	recommendations := recommendation.FindRecommendations(encodedFeatures, animeIndex, k)
+	candidates := recommendation.FindRecommendations(encodedFeatures, animeIndex, 80)
 
-	// Output the recommendations
-	// fmt.Fprintf(w, "Recommendations for Anime: %v\n", animeData[animeIndex].Title)
-	// for _, recommendation := range recommendations {
-	// 	fmt.Fprintf(w, "Recommended Anime: %v\n", animeData[recommendation].Title)
-	// }
+	filteredRecommendations := anime.FilteredRecommendations(animeData, candidates, animeIndex, k)
 
 	response := struct {
 		Anime           anime.Anime   `json:"anime"`
@@ -72,10 +68,9 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		Anime: animeData[animeIndex],
 	}
 
-	// Add the recommended anime to the response
-	for _, recommendation := range recommendations {
-		if recommendation >= 0 && recommendation < len(animeData) {
-			response.Recommendations = append(response.Recommendations, animeData[recommendation])
+	for _, idx := range filteredRecommendations {
+		if idx >= 0 && idx < len(animeData) {
+			response.Recommendations = append(response.Recommendations, animeData[idx])
 		}
 	}
 
