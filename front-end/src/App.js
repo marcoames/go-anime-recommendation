@@ -53,9 +53,10 @@ function App() {
       return;
     }
     await fetchAnimeData(
-      `https://go-anime-recommendation.onrender.com/api/?anime=${encodeURIComponent(
-        animeTitle
-      )}`
+      // `https://go-anime-recommendation.onrender.com/api/?anime=${encodeURIComponent(
+      //   animeTitle
+      // )}`
+      `http://localhost:8080/api/?anime=${encodeURIComponent(animeTitle)}`
     );
   };
 
@@ -64,8 +65,9 @@ function App() {
     const randomTitle = randomAnimeList[randomIndex];
     setAnimeTitle(randomTitle);
     await fetchAnimeData(
-      `https://go-anime-recommendation.onrender.com/api/?anime=${encodeURIComponent(
-        randomTitle
+      // `https://go-anime-recommendation.onrender.com/api/?anime=${encodeURIComponent(
+      //   randomTitle
+        `http://localhost:8080/api/?anime=${encodeURIComponent(randomTitle)}
       )}`
     );
   };
