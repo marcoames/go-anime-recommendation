@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 	"github.com/marcoames/go-anime-recommendation/internal/anime"
 	"github.com/marcoames/go-anime-recommendation/internal/api"
 	"github.com/rs/cors"
@@ -15,6 +17,9 @@ import (
 )
 
 func main() {
+	// Load .env file
+	_ = godotenv.Load()
+
 	fetch := flag.Bool("fetch", false, "Fetch anime data before starting server")
 	flag.Parse()
 
@@ -26,7 +31,7 @@ func main() {
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
-	
+
 	// Create a new client and connect to the server
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
@@ -37,7 +42,7 @@ func main() {
 			log.Printf("Error disconnecting from MongoDB: %v", err)
 		}
 	}()
-	
+
 	// Send a ping to confirm a successful connection
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatalf("Failed to ping MongoDB: %v", err)
@@ -51,7 +56,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to create repository: %v", err)
 		}
-		
+
 		if err := anime.FetchAndSaveAnime(repo); err != nil {
 			log.Fatalf("Failed to fetch anime: %v", err)
 		}
@@ -65,25 +70,26 @@ func main() {
 		log.Fatalf("Failed to create handler: %v", err)
 	}
 
-	// Setup CORS 
+	// Setup CORS
 	corsHandler := cors.New(cors.Options{
-	    AllowedOrigins: []string{
-	        "https://go-anime-recommendation-1.onrender.com",
-	        "http://localhost:3000",
-	    },
-	    AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	    AllowedHeaders: []string{
-	        "Content-Type", "Authorization", "X-Requested-With",
-	    },
-	    ExposedHeaders: []string{"Content-Length"},
-	    AllowCredentials: true,
-	    OptionsPassthrough: false,
-	    Debug: true,
+		AllowedOrigins: []string{
+			"https://go-anime-recommendation-1.onrender.com",
+			"http://localhost:3000",
+		},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Content-Type", "Authorization", "X-Requested-With",
+		},
+		ExposedHeaders:     []string{"Content-Length"},
+		AllowCredentials:   true,
+		OptionsPassthrough: false,
+		Debug:              true,
 	})
 
 	// Setup routes
 	http.HandleFunc("/api/", handler.HandleRequest)
-	
+	http.HandleFunc("/api/suggestions", handler.HandleSuggestions)
+
 	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
