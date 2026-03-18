@@ -48,15 +48,19 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=8`
+        `${backendUrl}/api/suggestions?q=${encodeURIComponent(query)}`
       );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions');
+      }
+
       const data = await response.json();
 
-      const titles =
-        data?.data?.map((anime) => ({
-          mal_id: anime.mal_id,
-          title: anime.title_english || anime.title,
-        })) || [];
+      const titles = (data.suggestions || []).map((title) => ({
+        id: title,
+        title,
+      }));
 
       setSuggestions(titles);
       setShowSuggestions(true);
@@ -116,7 +120,7 @@ function App() {
     }
 
     await fetchAnimeData(
-      `${backendUrl}/api?anime=${encodeURIComponent(animeTitle)}`
+      `${backendUrl}/api/?anime=${encodeURIComponent(animeTitle)}`
     );
   };
 
