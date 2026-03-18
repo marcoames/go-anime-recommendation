@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 
 function App() {
@@ -8,6 +8,9 @@ function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [backend, setBackend] = useState('production');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const skipNextSuggestionFetchRef = React.useRef(false);
 
   const BACKENDS = {
     local: 'http://localhost:8080',
@@ -35,6 +38,54 @@ function App() {
     ],
     []
   );
+
+  const fetchSuggestions = async (query) => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=8`
+      );
+      const data = await response.json();
+
+      const titles =
+        data?.data?.map((anime) => ({
+          mal_id: anime.mal_id,
+          title: anime.title_english || anime.title,
+        })) || [];
+
+      setSuggestions(titles);
+      setShowSuggestions(true);
+    } catch (err) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (skipNextSuggestionFetchRef.current) {
+      skipNextSuggestionFetchRef.current = false;
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (!animeTitle.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const debounceTimer = setTimeout(() => {
+      fetchSuggestions(animeTitle);
+    }, 350);
+
+    return () => clearTimeout(debounceTimer);
+  }, [animeTitle]);
 
   const fetchAnimeData = async (url) => {
     setLoading(true);
@@ -65,14 +116,18 @@ function App() {
     }
 
     await fetchAnimeData(
-      `${backendUrl}/?anime=${encodeURIComponent(animeTitle)}`
+      `${backendUrl}/api?anime=${encodeURIComponent(animeTitle)}`
     );
   };
 
   const handleRandomAnime = async () => {
     const randomIndex = Math.floor(Math.random() * randomAnimeList.length);
     const randomTitle = randomAnimeList[randomIndex];
+
+    skipNextSuggestionFetchRef.current = true;
     setAnimeTitle(randomTitle);
+    setSuggestions([]);
+    setShowSuggestions(false);
 
     await fetchAnimeData(
       `${backendUrl}/api/?anime=${encodeURIComponent(randomTitle)}`
@@ -125,8 +180,32 @@ function App() {
           type="text"
           value={animeTitle}
           onChange={(e) => setAnimeTitle(e.target.value)}
+          onFocus={() => {
+            if (suggestions.length > 0) setShowSuggestions(true);
+          }}
+          onBlur={() => {
+            setTimeout(() => setShowSuggestions(false), 150);
+          }}
           placeholder="Enter an anime title"
         />
+        {showSuggestions && suggestions.length > 0 && (
+          <ul className="suggestions-dropdown">
+            {suggestions.map((anime) => (
+              <li
+                key={anime.mal_id}
+                onMouseDown={() => {
+                  skipNextSuggestionFetchRef.current = true;
+                  setAnimeTitle(anime.title);
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                }}
+              >
+                {anime.title}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <button onClick={handleSearch} disabled={loading}>
           {loading ? 'Loading...' : 'Get Recommendations'}
         </button>
