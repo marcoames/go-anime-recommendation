@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/marcoames/go-anime-recommendation/internal/anime"
 	"github.com/marcoames/go-anime-recommendation/internal/recommendation"
@@ -83,6 +84,34 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Encode and return the response as JSON
 	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+	}
+}
+
+func (h *Handler) HandleSuggestions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		err := json.NewEncoder(w).Encode(map[string][]string{
+			"suggestions": {},
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	suggestions, err := h.animeRepo.SearchAnimeTitles(query, 8)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error loading suggestions: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(map[string][]string{
+		"suggestions": suggestions,
+	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 	}
