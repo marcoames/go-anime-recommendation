@@ -57,7 +57,7 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get recommendations
-	k := 4
+	k := 6
 	recommendations := recommendation.FindRecommendations(encodedFeatures, animeIndex, k)
 
 	// Output the recommendations
