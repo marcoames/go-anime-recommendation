@@ -81,3 +81,78 @@ func (r *Repository) GetAnimeIndex(animeTitle string, animeData []Anime) (int, e
 	}
 	return -1, fmt.Errorf("Anime '%s' not found", animeTitle)
 }
+
+func (r *Repository) SearchAnimeTitles(query string, limit int64) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return []string{}, nil
+	}
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{
+				"title": bson.M{
+					"$regex":   "^" + query,
+					"$options": "i",
+				},
+			},
+			{
+				"title_english": bson.M{
+					"$regex":   "^" + query,
+					"$options": "i",
+				},
+			},
+			{
+				"title_japanese": bson.M{
+					"$regex":   "^" + query,
+					"$options": "i",
+				},
+			},
+			{
+				"title_synonyms": bson.M{
+					"$regex":   "^" + query,
+					"$options": "i",
+				},
+			},
+		},
+	}
+
+	opts := options.Find().
+		SetLimit(limit).
+		SetProjection(bson.M{
+			"title": 1,
+			"_id":   0,
+		})
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	type animeTitleResult struct {
+		Title string `bson:"title"`
+	}
+
+	var results []animeTitleResult
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]bool)
+	titles := make([]string, 0, len(results))
+
+	for _, result := range results {
+		title := strings.TrimSpace(result.Title)
+		if title == "" || seen[title] {
+			continue
+		}
+		seen[title] = true
+		titles = append(titles, title)
+	}
+
+	return titles, nil
+}
