@@ -22,6 +22,9 @@ func cosineSimilarity(v1, v2 []float64) float64 {
 
 // Find recommendations based on the encoded features using KNN
 func FindRecommendations(features [][]float64, queryIndex int, k int) []int {
+	if queryIndex < 0 || queryIndex >= len(features) || k <= 0 {
+		return nil
+	}
 	query := features[queryIndex]
 	type neighbor struct {
 		index    int
@@ -35,8 +38,11 @@ func FindRecommendations(features [][]float64, queryIndex int, k int) []int {
 		if i == queryIndex {
 			continue
 		}
-		distance := cosineSimilarity(query, feature)
-		neighbors = append(neighbors, neighbor{index: i, distance: distance})
+		if len(feature) != len(query) {
+			continue
+		}
+		similarity := cosineSimilarity(query, feature)
+		neighbors = append(neighbors, neighbor{index: i, distance: similarity})
 	}
 
 	// Sort neighbors by distance in descending order (higher similarity is better)

@@ -8,7 +8,7 @@ Este projeto é um sistema de recomendação de anime que obtém dados da Jikan 
 
 ## Funcionalidades
 
-- **Coleta de Dados de Anime**: Busca e armazena automaticamente dados de anime da Jikan API.
+- **Coleta de Dados de Anime**: Busca e armazena dados de anime da Jikan API através do modo `fetch`.
 - **Recomendações Baseadas em Conteúdo**: Usa similaridade de cosseno para encontrar animes semelhantes com base em múltiplos recursos.
 - **API RESTful**: Endpoint HTTP simples para obter recomendações de anime.
 - **Integração com MongoDB:**: Armazenamento persistente dos dados de anime.
@@ -69,14 +69,110 @@ Exemplo de resposta
 
     - Extrai recursos (gêneros, estúdios, etc.).
 
-    - Aplica pesos a diferentes recursos.
+    - Normaliza score e popularidade e codifica categorias por identidade.
 
-    - Usa similaridade de cosseno para encontrar animes semelhantes.
+    - Usa similaridade de cosseno para gerar um pool dos 50 candidatos mais relevantes.
 
-    - Retorna os 4 animes mais similares como recomendações.
+    - Reordena as recomendações com MMR para equilibrar relevância e variedade,
+      sem aceitar candidatos muito menos similares.
+    - Evita múltiplos títulos da mesma franquia quando existem alternativas
+      igualmente relevantes.
+    - Retorna até 6 animes mais similares como recomendações.
+
+### Diversidade e franquias
+
+A diversificação acontece depois da busca por similaridade. O sistema usa, nesta
+ordem, `FranchiseID` quando disponível, títulos em inglês/japonês, título
+principal e sinônimos. Também reconhece sufixos comuns como `Season`, `Movie`,
+`Arc`, `OVA` e `Special`.
+
+O coletor atual não consulta relações extras da Jikan para cada anime. Portanto,
+`FranchiseID` é um campo opcional preparado para uma futura carga enriquecida;
+sem ele, a identificação depende dos títulos e sinônimos retornados pela Jikan.
+Quando a franquia não pode ser identificada, a recomendação ainda funciona, mas
+não é possível garantir a remoção de todos os títulos relacionados.
+
+As features ficam em cache na memória. Após alterar ou enriquecer os dados,
+execute novamente o fetch e reinicie o backend:
+
+```powershell
+cd "back-end"
+go run ./cmd/server -fetch
+go run ./cmd/server
+```
 
 
 ## Implantação
+
+### Execução local com Docker
+
+Suba o MongoDB e a API normalmente. Para carregar ou atualizar os dados antes de usar
+as recomendações, execute o coletor uma vez:
+
+```powershell
+docker compose up -d mongodb
+docker compose run --rm fetcher
+docker compose up -d api frontend
+```
+
+O coletor grava a nova carga de forma atômica; uma falha durante a atualização
+preserva a carga anterior.
+
+### Execução local com MongoDB na nuvem
+
+Para executar somente o backend e o frontend localmente, configure a URI do
+MongoDB na sessão do PowerShell:
+
+```powershell
+cd "back-end"
+$env:MONGODB_URI="mongodb+srv://usuario:senha@cluster.mongodb.net/?retryWrites=true&w=majority"
+$env:LOG_COLOR="1"
+go run ./cmd/server
+```
+
+O backend ficará disponível em `http://localhost:8080`. Em outro terminal:
+
+```powershell
+cd "front-end"
+npm install
+npm start
+```
+
+O frontend inicia usando o backend local (`http://localhost:8080`). A API pode
+ser verificada em `http://localhost:8080/health`.
+
+#### Logs do backend
+
+Os logs usam `log/slog` e incluem eventos de inicialização e cada requisição
+HTTP com método, rota, status e duração. Para habilitar cores no terminal:
+
+```powershell
+$env:LOG_COLOR="1"
+go run ./cmd/server
+```
+
+Para desativar cores, remova `LOG_COLOR` ou defina `NO_COLOR`:
+
+```powershell
+$env:NO_COLOR="1"
+```
+
+### Testes
+
+Backend:
+
+```powershell
+cd "back-end"
+go test ./...
+go vet ./...
+```
+
+Frontend:
+
+```powershell
+cd "front-end"
+npm run build
+```
 
 O sistema está implantado e acessível via Render:
 
@@ -85,4 +181,3 @@ O sistema está implantado e acessível via Render:
 **Backend (API)**: https://go-anime-recommendation.onrender.com/
 
 Sinta-se à vontade para visitar o link do frontend e testar o sistema de recomendação de anime interativamente.
-

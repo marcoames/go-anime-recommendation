@@ -3,6 +3,7 @@ package anime
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 type Repository struct {
+	client     *mongo.Client
 	collection *mongo.Collection
 }
 
@@ -23,9 +25,17 @@ func NewRepository(uri string) (*Repository, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(context.Background())
+		return nil, err
+	}
 
 	collection := client.Database("anime").Collection("animes")
-	return &Repository{collection: collection}, nil
+	return &Repository{client: client, collection: collection}, nil
+}
+
+func (r *Repository) Close(ctx context.Context) error {
+	return r.client.Disconnect(ctx)
 }
 
 func (r *Repository) LoadAnimeData() ([]Anime, error) {
@@ -56,14 +66,31 @@ func (r *Repository) SaveAnimeData(animes []Anime) error {
 		documents = append(documents, anime)
 	}
 
-	// Clear existing data
-	if err := r.collection.Drop(ctx); err != nil {
+	if len(documents) == 0 {
+		return fmt.Errorf("cannot save an empty anime dataset")
+	}
+
+	tempName := fmt.Sprintf("%s_tmp_%d", r.collection.Name(), time.Now().UnixNano())
+	tempCollection := r.collection.Database().Collection(tempName)
+	if err := tempCollection.Drop(ctx); err != nil && err != mongo.ErrNoDocuments {
+		return err
+	}
+	if _, err := tempCollection.InsertMany(ctx, documents); err != nil {
+		_ = tempCollection.Drop(ctx)
 		return err
 	}
 
-	// Insert new data
-	_, err := r.collection.InsertMany(ctx, documents)
-	return err
+	databaseName := r.collection.Database().Name()
+	rename := bson.D{
+		{Key: "renameCollection", Value: databaseName + "." + tempName},
+		{Key: "to", Value: databaseName + "." + r.collection.Name()},
+		{Key: "dropTarget", Value: true},
+	}
+	if err := r.client.Database("admin").RunCommand(ctx, rename).Err(); err != nil {
+		_ = tempCollection.Drop(ctx)
+		return err
+	}
+	return nil
 }
 
 func (r *Repository) GetAnimeIndex(animeTitle string, animeData []Anime) (int, error) {
@@ -86,7 +113,7 @@ func (r *Repository) SearchAnimeTitles(query string, limit int64) ([]string, err
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	query = strings.TrimSpace(query)
+	query = regexp.QuoteMeta(strings.TrimSpace(query))
 	if query == "" {
 		return []string{}, nil
 	}

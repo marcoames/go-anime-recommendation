@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 
 function App() {
@@ -7,14 +7,16 @@ function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [backend, setBackend] = useState('production');
+  const [backend, setBackend] = useState('local');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const skipNextSuggestionFetchRef = React.useRef(false);
 
   const BACKENDS = {
     local: 'http://localhost:8080',
-    production: process.env.REACT_APP_BACKEND_URL,
+    production:
+      process.env.REACT_APP_BACKEND_URL ||
+      'https://go-anime-recommendation.onrender.com',
   };
 
   const backendUrl = BACKENDS[backend];
@@ -39,7 +41,7 @@ function App() {
     []
   );
 
-  const fetchSuggestions = async (query) => {
+  const fetchSuggestions = useCallback(async (query) => {
     if (!query.trim()) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -68,7 +70,7 @@ function App() {
       setSuggestions([]);
       setShowSuggestions(false);
     }
-  };
+  }, [backendUrl]);
 
   useEffect(() => {
     if (skipNextSuggestionFetchRef.current) {
@@ -89,7 +91,7 @@ function App() {
     }, 350);
 
     return () => clearTimeout(debounceTimer);
-  }, [animeTitle]);
+  }, [animeTitle, fetchSuggestions]);
 
   const fetchAnimeData = async (url) => {
     setLoading(true);
@@ -196,7 +198,7 @@ function App() {
           <ul className="suggestions-dropdown">
             {suggestions.map((anime) => (
               <li
-                key={anime.mal_id}
+                key={anime.id}
                 onMouseDown={() => {
                   skipNextSuggestionFetchRef.current = true;
                   setAnimeTitle(anime.title);

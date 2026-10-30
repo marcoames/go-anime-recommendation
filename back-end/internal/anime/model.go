@@ -94,6 +94,7 @@ type Anime struct {
 	TitleEnglish  string    `json:"title_english"`
 	TitleJapanese string    `json:"title_japanese"`
 	TitleSynonyms []string  `json:"title_synonyms"`
+	FranchiseID   int       `json:"franchise_id,omitempty"`
 	Trailer       Trailer   `json:"trailer"`
 	Type          string    `json:"type"`
 	URL           string    `json:"url"`

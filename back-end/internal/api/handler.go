@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/marcoames/go-anime-recommendation/internal/anime"
 	"github.com/marcoames/go-anime-recommendation/internal/recommendation"
@@ -12,19 +13,54 @@ import (
 
 type Handler struct {
 	animeRepo *anime.Repository
+	mu        sync.RWMutex
+	animeData []anime.Anime
+	features  [][]float64
+	loaded    bool
 }
 
-func NewHandler(mongoURI string) (*Handler, error) {
-	repo, err := anime.NewRepository(mongoURI)
-	if err != nil {
-		return nil, err
+func NewHandler(repo *anime.Repository) *Handler {
+	return &Handler{animeRepo: repo}
+}
+
+func (h *Handler) loadAnimeData() ([]anime.Anime, [][]float64, error) {
+	h.mu.RLock()
+	if h.loaded {
+		data, features := h.animeData, h.features
+		h.mu.RUnlock()
+		return data, features, nil
 	}
-	return &Handler{animeRepo: repo}, nil
+	h.mu.RUnlock()
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.loaded {
+		return h.animeData, h.features, nil
+	}
+
+	data, err := h.animeRepo.LoadAnimeData()
+	if err != nil {
+		return nil, nil, err
+	}
+	weights := map[string]float64{
+		"score":       0.3,
+		"popularity":  0.2,
+		"genres":      1,
+		"demographic": 0.15,
+		"studios":     0.1,
+	}
+	h.animeData = data
+	h.features = recommendation.EncodeFeatures(recommendation.PrepareFeatures(data), weights)
+	h.loaded = true
+	return h.animeData, h.features, nil
 }
 
 func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
-	// Load anime data from MongoDB
-	animeData, err := h.animeRepo.LoadAnimeData()
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	animeData, encodedFeatures, err := h.loadAnimeData()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error loading anime data: %v", err), http.StatusInternalServerError)
 		return
@@ -37,18 +73,6 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare features
-	allFeatures := recommendation.PrepareFeatures(animeData)
-	weights := map[string]float64{
-		"score":       0.3, // slightly higher for quality-based recommendations
-		"popularity":  0.2, // moderate for trending recommendations
-		"genres":      1,   // prioritize genres for better personalization
-		"demographic": 0.1, // keeps demographic in consideration
-		"studios":     0.2, // moderate studio influence
-	}
-
-	encodedFeatures := recommendation.EncodeFeatures(allFeatures, weights)
-
 	// Find the index of the anime
 	animeIndex, err := h.animeRepo.GetAnimeIndex(animeTitle, animeData)
 	if err != nil {
@@ -58,7 +82,7 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get recommendations
 	k := 6
-	recommendations := recommendation.FindRecommendations(encodedFeatures, animeIndex, k)
+	recommendations := recommendation.FindDiverseRecommendations(encodedFeatures, animeData, animeIndex, k)
 
 	// Output the recommendations
 	// fmt.Fprintf(w, "Recommendations for Anime: %v\n", animeData[animeIndex].Title)
@@ -90,6 +114,10 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleSuggestions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
