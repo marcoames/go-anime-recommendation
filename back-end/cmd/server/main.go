@@ -17,7 +17,6 @@ import (
 )
 
 func main() {
-	// Load .env
 	_ = godotenv.Load()
 
 	logOutput := io.Writer(os.Stdout)
@@ -32,7 +31,6 @@ func main() {
 	fetch := flag.Bool("fetch", false, "Fetch anime data before starting server")
 	flag.Parse()
 
-	// Get MongoDB URI from environment
 	mongoURI := os.Getenv("MONGODB_URI")
 	if mongoURI == "" {
 		logger.Error("MONGODB_URI environment variable is required")
@@ -51,7 +49,6 @@ func main() {
 	}()
 	logger.Info("connected to MongoDB")
 
-	// If fetch flag is set, fetch data and exit
 	if *fetch {
 		logger.Info("starting anime data fetch")
 		if err := anime.FetchAndSaveAnime(repo); err != nil {
@@ -62,10 +59,8 @@ func main() {
 		return
 	}
 
-	// Create API handler
 	handler := api.NewHandler(repo)
 
-	// Setup CORS
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins: []string{
 			"https://go-anime-recommendation-1.onrender.com",
@@ -81,17 +76,14 @@ func main() {
 		Debug:              false,
 	})
 
-	// Setup routes
 	http.HandleFunc("/api/", handler.HandleRequest)
 	http.HandleFunc("/api/suggestions", handler.HandleSuggestions)
 
-	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	// Wrap with CORS
 	wrappedHandler := requestLogger(logger, corsHandler.Handler(http.DefaultServeMux))
 
 	port := os.Getenv("PORT")

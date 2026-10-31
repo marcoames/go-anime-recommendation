@@ -452,9 +452,6 @@ function App() {
       )}
 
       <div className="container">
-        {/* ... all existing JSX stays exactly the same ... */}
-
-        {/* Dev toggle - only visible in development */}
         {process.env.NODE_ENV === 'development' && (
           <div style={{
             position: 'fixed',

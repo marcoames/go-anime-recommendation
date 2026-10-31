@@ -46,7 +46,7 @@ func FetchAndSaveAnime(repo *Repository) error {
 			_ = resp.Body.Close()
 
 			allAnime = append(allAnime, result.Data...)
-			time.Sleep(1 * time.Second) // Rate limiting
+			time.Sleep(1 * time.Second) // Respect Jikan's rate limit.
 			goto nextPage
 		}
 		return fmt.Errorf("failed to fetch page %d after multiple attempts", page)

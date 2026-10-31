@@ -8,13 +8,11 @@ import (
 	"time"
 )
 
-// JikanClient handles requests to the Jikan API.
 type JikanClient struct {
 	BaseURL string
 	Client  *http.Client
 }
 
-// NewJikanClient creates a new JikanClient instance.
 func NewJikanClient() *JikanClient {
 	return &JikanClient{
 		BaseURL: "https://api.jikan.moe/v4",
@@ -22,7 +20,6 @@ func NewJikanClient() *JikanClient {
 	}
 }
 
-// FetchTopAnime fetches the top anime by score with pagination and handles rate limits.
 func (client *JikanClient) FetchTopAnime(page int) ([]map[string]interface{}, error) {
 	endpoint := fmt.Sprintf("%s/top/anime?page=%d", client.BaseURL, page)
 
@@ -31,7 +28,6 @@ func (client *JikanClient) FetchTopAnime(page int) ([]map[string]interface{}, er
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch top anime: %v", err)
 		}
-		// Handle rate limits (status code 429).
 		if resp.StatusCode == http.StatusTooManyRequests {
 			_ = resp.Body.Close()
 			fmt.Println("Rate limited. Retrying after 2 seconds...")
@@ -59,7 +55,6 @@ func (client *JikanClient) FetchTopAnime(page int) ([]map[string]interface{}, er
 	return nil, fmt.Errorf("failed to fetch top anime after multiple attempts")
 }
 
-// SaveToFile saves data to a JSON file.
 func SaveToFile(data []map[string]interface{}, filename string) error {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {

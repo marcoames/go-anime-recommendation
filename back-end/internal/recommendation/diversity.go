@@ -22,8 +22,8 @@ type recommendationCandidate struct {
 	relevance float64
 }
 
-// FindDiverseRecommendations applies MMR re-ranking and avoids returning
-// multiple entries from the selected anime's franchise when alternatives exist.
+// FindDiverseRecommendations balances relevance and diversity while avoiding
+// repeated franchises when sufficiently relevant alternatives exist.
 func FindDiverseRecommendations(features [][]float64, animeData []anime.Anime, queryIndex, k int) []int {
 	if queryIndex < 0 || queryIndex >= len(features) || queryIndex >= len(animeData) || k <= 0 {
 		return nil
@@ -49,8 +49,6 @@ func FindDiverseRecommendations(features [][]float64, animeData []anime.Anime, q
 		return nil
 	}
 
-	// Diversity must not introduce weak recommendations. Keep only candidates
-	// close to the best similarity score, with a small floor for sparse data.
 	poolSize := candidatePool
 	if poolSize > len(candidates) {
 		poolSize = len(candidates)
@@ -96,8 +94,6 @@ func FindDiverseRecommendations(features [][]float64, animeData []anime.Anime, q
 		addFranchises(franchises, franchiseKeys(animeData[bestIndex]))
 	}
 
-	// If there are not enough unrelated candidates, allow the best remaining
-	// relevant candidates rather than returning weak and unrelated titles.
 	for len(selected) < k {
 		bestIndex := -1
 		bestScore := -1.0

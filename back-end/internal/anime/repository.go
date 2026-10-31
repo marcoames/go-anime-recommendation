@@ -60,7 +60,6 @@ func (r *Repository) SaveAnimeData(animes []Anime) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Convert animes to interface{} for bulk write
 	var documents []interface{}
 	for _, anime := range animes {
 		documents = append(documents, anime)
