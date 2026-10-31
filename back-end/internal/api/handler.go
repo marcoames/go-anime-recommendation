@@ -12,14 +12,20 @@ import (
 )
 
 type Handler struct {
-	animeRepo *anime.Repository
+	animeRepo animeRepository
 	mu        sync.RWMutex
 	animeData []anime.Anime
 	features  [][]float64
 	loaded    bool
 }
 
-func NewHandler(repo *anime.Repository) *Handler {
+type animeRepository interface {
+	LoadAnimeData() ([]anime.Anime, error)
+	GetAnimeIndex(string, []anime.Anime) (int, error)
+	SearchAnimeTitles(string, int64) ([]string, error)
+}
+
+func NewHandler(repo animeRepository) *Handler {
 	return &Handler{animeRepo: repo}
 }
 
@@ -66,29 +72,20 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the anime title from query parameters
 	animeTitle := r.URL.Query().Get("anime")
 	if animeTitle == "" {
 		http.Error(w, "Please provide an anime title using the 'anime' query parameter.", http.StatusBadRequest)
 		return
 	}
 
-	// Find the index of the anime
 	animeIndex, err := h.animeRepo.GetAnimeIndex(animeTitle, animeData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	// Get recommendations
 	k := 6
 	recommendations := recommendation.FindDiverseRecommendations(encodedFeatures, animeData, animeIndex, k)
-
-	// Output the recommendations
-	// fmt.Fprintf(w, "Recommendations for Anime: %v\n", animeData[animeIndex].Title)
-	// for _, recommendation := range recommendations {
-	// 	fmt.Fprintf(w, "Recommended Anime: %v\n", animeData[recommendation].Title)
-	// }
 
 	response := struct {
 		Anime           anime.Anime   `json:"anime"`
@@ -97,7 +94,6 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		Anime: animeData[animeIndex],
 	}
 
-	// Add the recommended anime to the response
 	for _, recommendation := range recommendations {
 		if recommendation >= 0 && recommendation < len(animeData) {
 			response.Recommendations = append(response.Recommendations, animeData[recommendation])
@@ -106,7 +102,6 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	// Encode and return the response as JSON
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
