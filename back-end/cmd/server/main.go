@@ -120,22 +120,45 @@ type colorWriter struct {
 
 func (w colorWriter) Write(p []byte) (int, error) {
 	message := string(p)
-	color := "\x1b[36m"
-	switch {
-	case strings.Contains(message, "level=ERROR"):
-		color = "\x1b[31m"
-	case strings.Contains(message, "level=WARN"):
-		color = "\x1b[33m"
-	case strings.Contains(message, "level=INFO"):
-		color = "\x1b[32m"
-	case strings.Contains(message, "level=DEBUG"):
-		color = "\x1b[90m"
+	levelStart := strings.Index(message, "level=")
+	if levelStart == -1 {
+		return w.writeWhite(message, len(p))
 	}
-	colored := color + message + "\x1b[0m"
+
+	levelValueStart := levelStart + len("level=")
+	levelValueEnd := levelValueStart + strings.IndexAny(message[levelValueStart:], " \t\r\n")
+	if levelValueEnd < levelValueStart {
+		levelValueEnd = len(message)
+	}
+
+	levelColor := map[string]string{
+		"ERROR": "\x1b[31m",
+		"WARN":  "\x1b[33m",
+		"INFO":  "\x1b[32m",
+		"DEBUG": "\x1b[90m",
+	}[message[levelValueStart:levelValueEnd]]
+	if levelColor == "" {
+		return w.writeWhite(message, len(p))
+	}
+
+	colored := "\x1b[37m" +
+		message[:levelValueStart] +
+		levelColor +
+		message[levelValueStart:levelValueEnd] +
+		"\x1b[37m" +
+		message[levelValueEnd:] +
+		"\x1b[0m"
 	if _, err := w.output.Write([]byte(colored)); err != nil {
 		return 0, err
 	}
 	return len(p), nil
+}
+
+func (w colorWriter) writeWhite(message string, length int) (int, error) {
+	if _, err := w.output.Write([]byte("\x1b[37m" + message + "\x1b[0m")); err != nil {
+		return 0, err
+	}
+	return length, nil
 }
 
 type statusRecorder struct {

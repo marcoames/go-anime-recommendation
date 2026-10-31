@@ -151,6 +151,9 @@ $env:LOG_COLOR="1"
 go run ./cmd/server
 ```
 
+Com as cores habilitadas, apenas o nível do log (`ERROR`, `WARN`, `INFO` ou
+`DEBUG`) é colorido; o restante do texto permanece branco.
+
 Para desativar cores, remova `LOG_COLOR` ou defina `NO_COLOR`:
 
 ```powershell
