@@ -73,8 +73,7 @@ copie o arquivo de exemplo e preencha a URI do MongoDB:
 Copy-Item back-end\.env.example back-end\.env
 ```
 
-Edite `back-end/.env` e informe `MONGODB_URI`. O arquivo `.env` pode conter
-credenciais e não deve ser versionado; o arquivo `.env.example` deve ser usado
+Edite `back-end/.env` e informe `MONGODB_URI`. O arquivo `.env.example` deve ser usado
 como referência.
 
 Variáveis disponíveis:
