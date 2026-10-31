@@ -11,8 +11,8 @@ Este projeto é um sistema de recomendação de anime que obtém dados da Jikan 
 - **Coleta de Dados de Anime**: Busca e armazena dados de anime da Jikan API através do modo `fetch`.
 - **Recomendações Baseadas em Conteúdo**: Usa similaridade de cosseno para encontrar animes semelhantes com base em múltiplos recursos.
 - **API RESTful**: Endpoint HTTP simples para obter recomendações de anime.
-- **Integração com MongoDB:**: Armazenamento persistente dos dados de anime.
-- **Suporte a Docker**:  Implantação facilitada usando contêineres Docker.
+- **Integração com MongoDB**: Armazenamento persistente dos dados de anime.
+- **Suporte a Docker**: Implantação facilitada usando contêineres Docker.
 - **Frontend em React**: Interface amigável para buscar e exibir recomendações de anime.
 
 ## Arquitetura
@@ -57,14 +57,68 @@ API HTTP do backend.
 - **API**: RESTful HTTP endpoints
 - **API Externa**: Jikan API (MyAnimeList)
 
+## Requisitos
+
+- Go 1.21 ou superior
+- Node.js e npm
+- MongoDB local ou MongoDB Atlas
+- Docker e Docker Compose, apenas se quiser executar com contêineres
+
+## Configuração
+
+O backend lê as variáveis de ambiente de `back-end/.env`. Para começar,
+copie o arquivo de exemplo e preencha a URI do MongoDB:
+
+```powershell
+Copy-Item back-end\.env.example back-end\.env
+```
+
+Edite `back-end/.env` e informe `MONGODB_URI`. O arquivo `.env` pode conter
+credenciais e não deve ser versionado; o arquivo `.env.example` deve ser usado
+como referência.
+
+Variáveis disponíveis:
+
+```env
+MONGODB_URI="mongodb+srv://usuario:senha@cluster.mongodb.net/anime?retryWrites=true&w=majority"
+PORT="8080"
+LOG_COLOR="1"
+```
+
+`PORT` é opcional e assume `8080`. `LOG_COLOR=1` habilita cores ANSI nos logs
+do terminal. Para desabilitá-las, use `NO_COLOR=1`.
+
+Se estiver usando MongoDB localmente, inicie o serviço antes de executar o
+backend. Com MongoDB Atlas, use a string de conexão do cluster em
+`MONGODB_URI`.
+
 ## Uso da API
 
 Envie uma requisição GET para obter recomendações:
 
 ```http
 GET /api/?anime=<anime_title>
-````
-Exemplo de resposta
+```
+
+Exemplo:
+
+```http
+GET /api/?anime=Demon%20Slayer
+```
+
+Para consultar sugestões enquanto o usuário digita:
+
+```http
+GET /api/suggestions?q=demon
+```
+
+Para verificar se o backend está disponível:
+
+```http
+GET /health
+```
+
+Exemplo de resposta:
 ```json
 {
   "anime": {
@@ -100,22 +154,7 @@ Exemplo de resposta
 
     - Reordena as recomendações com MMR para equilibrar relevância e variedade,
       sem aceitar candidatos muito menos similares.
-    - Evita múltiplos títulos da mesma franquia quando existem alternativas
-      igualmente relevantes.
     - Retorna até 6 animes mais similares como recomendações.
-
-### Diversidade e franquias
-
-A diversificação acontece depois da busca por similaridade. O sistema usa, nesta
-ordem, `FranchiseID` quando disponível, títulos em inglês/japonês, título
-principal e sinônimos. Também reconhece sufixos comuns como `Season`, `Movie`,
-`Arc`, `OVA` e `Special`.
-
-O coletor atual não consulta relações extras da Jikan para cada anime. Portanto,
-`FranchiseID` é um campo opcional preparado para uma futura carga enriquecida;
-sem ele, a identificação depende dos títulos e sinônimos retornados pela Jikan.
-Quando a franquia não pode ser identificada, a recomendação ainda funciona, mas
-não é possível garantir a remoção de todos os títulos relacionados.
 
 As features ficam em cache na memória. Após alterar ou enriquecer os dados,
 execute novamente o fetch e reinicie o backend:
@@ -126,13 +165,27 @@ go run ./cmd/server -fetch
 go run ./cmd/server
 ```
 
+O primeiro comando atualiza a base e encerra o processo; o segundo inicia a
+API.
 
-## Implantação
+## Execução local
 
-### Execução local com Docker
+Após iniciar o backend com os comandos acima, ele ficará disponível em
+`http://localhost:8080`.
 
-Suba o MongoDB e a API normalmente. Para carregar ou atualizar os dados antes de usar
-as recomendações, execute o coletor uma vez:
+O frontend deve ser iniciado em outro terminal:
+
+```powershell
+cd front-end
+npm install
+npm start
+```
+
+Abra `http://localhost:3000`. Por padrão, o frontend usa o backend local
+(`http://localhost:8080`). Em modo de desenvolvimento, o botão no rodapé
+permite alternar entre o backend local e o ambiente de produção.
+
+## Execução com Docker
 
 ```powershell
 docker compose up -d mongodb
@@ -140,37 +193,23 @@ docker compose run --rm fetcher
 docker compose up -d api frontend
 ```
 
-O coletor grava a nova carga de forma atômica; uma falha durante a atualização
-preserva a carga anterior.
+Nesse modo, o MongoDB é executado pelo próprio Docker e o backend usa
+`mongodb://mongodb:27017`. O arquivo `.env` local não é necessário para esses
+serviços.
 
-### Execução local com MongoDB na nuvem
+Endereços:
 
-Para executar somente o backend e o frontend localmente, configure a URI do
-MongoDB na sessão do PowerShell:
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
+- Health check: `http://localhost:8080/health`
 
-Copie `back-end/.env.example` para `back-end/.env` e preencha `MONGODB_URI`.
-O arquivo `.env` real não deve ser versionado.
-
-```powershell
-cd "back-end"
-$env:MONGODB_URI="mongodb+srv://usuario:senha@cluster.mongodb.net/?retryWrites=true&w=majority"
-$env:LOG_COLOR="1"
-go run ./cmd/server
-```
-
-O backend ficará disponível em `http://localhost:8080`. Em outro terminal:
+Para parar os serviços:
 
 ```powershell
-cd "front-end"
-npm install
-npm start
+docker compose down
 ```
 
-O frontend inicia usando o backend local (`http://localhost:8080`). A API pode
-ser verificada em `http://localhost:8080/health`.
-
-
-### Testes
+## Testes
 
 Backend:
 
@@ -185,17 +224,15 @@ sucesso, validação `400`, anime inexistente `404`, falhas internas `500`,
 sugestões e métodos inválidos `405`. Eles não exigem MongoDB ou conexão com a
 internet.
 
-Frontend:
+Para executar os testes do frontend:
 
 ```powershell
 cd "front-end"
+npm test
 npm run build
 ```
 
-O sistema está implantado e acessível via Render:
+## Deploy atual
 
-**Frontend (React)**: https://go-anime-recommendation-1.onrender.com/
-
-**Backend (API)**: https://go-anime-recommendation.onrender.com/
-
-Sinta-se à vontade para visitar o link do frontend e testar o sistema de recomendação de anime interativamente.
+- Frontend: https://go-anime-recommendation-1.onrender.com/
+- Backend: https://go-anime-recommendation.onrender.com/
