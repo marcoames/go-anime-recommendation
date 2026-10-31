@@ -23,6 +23,31 @@ O projeto consiste nos seguintes serviços:
 2. **Serviço de Coleta (Fetcher)**: Atualiza o banco de dados de anime com informações recentes.
 3. **Frontend React**: Fornece uma UI interativa para os usuários buscarem animes e visualizarem recomendações.
 
+## Estrutura do projeto
+
+```text
+back-end/
+├── cmd/server/                 # Entrada do servidor HTTP e configuração da aplicação
+├── internal/
+│   ├── anime/                  # Modelo, coleta da Jikan e persistência no MongoDB
+│   ├── api/                    # Handlers HTTP, rotas de negócio e testes da API
+│   └── recommendation/         # Features, similaridade KNN, diversidade e testes
+├── package/jikan/              # Cliente auxiliar para chamadas à Jikan API
+├── go.mod                      # Dependências e configuração do módulo Go
+└── Dockerfile                  # Imagem do backend
+
+front-end/
+├── src/                        # Componentes React, estilos e entrada da aplicação
+├── public/                     # Arquivos públicos e metadados da aplicação
+├── package.json                # Scripts e dependências do frontend
+└── Dockerfile                  # Imagem do frontend
+```
+
+O backend segue a convenção comum de Go: `cmd` contém os executáveis e
+`internal` contém pacotes privados da aplicação. Os testes ficam próximos do
+código que validam. O frontend é uma aplicação React independente que consome a
+API HTTP do backend.
+
 ## Stack Técnica
 
 - **Backend**: Go (Golang)
@@ -123,6 +148,9 @@ preserva a carga anterior.
 Para executar somente o backend e o frontend localmente, configure a URI do
 MongoDB na sessão do PowerShell:
 
+Copie `back-end/.env.example` para `back-end/.env` e preencha `MONGODB_URI`.
+O arquivo `.env` real não deve ser versionado.
+
 ```powershell
 cd "back-end"
 $env:MONGODB_URI="mongodb+srv://usuario:senha@cluster.mongodb.net/?retryWrites=true&w=majority"
@@ -141,24 +169,6 @@ npm start
 O frontend inicia usando o backend local (`http://localhost:8080`). A API pode
 ser verificada em `http://localhost:8080/health`.
 
-#### Logs do backend
-
-Os logs usam `log/slog` e incluem eventos de inicialização e cada requisição
-HTTP com método, rota, status e duração. Para habilitar cores no terminal:
-
-```powershell
-$env:LOG_COLOR="1"
-go run ./cmd/server
-```
-
-Com as cores habilitadas, apenas o nível do log (`ERROR`, `WARN`, `INFO` ou
-`DEBUG`) é colorido; o restante do texto permanece branco.
-
-Para desativar cores, remova `LOG_COLOR` ou defina `NO_COLOR`:
-
-```powershell
-$env:NO_COLOR="1"
-```
 
 ### Testes
 
@@ -169,6 +179,11 @@ cd "back-end"
 go test ./...
 go vet ./...
 ```
+
+Os testes da API usam `httptest` e um repositório falso, cobrindo respostas de
+sucesso, validação `400`, anime inexistente `404`, falhas internas `500`,
+sugestões e métodos inválidos `405`. Eles não exigem MongoDB ou conexão com a
+internet.
 
 Frontend:
 
