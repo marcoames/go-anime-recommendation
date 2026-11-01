@@ -7,7 +7,7 @@ function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [backend, setBackend] = useState('local');
+  const [backend, setBackend] = useState('production');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const skipNextSuggestionFetchRef = React.useRef(false);
@@ -52,11 +52,7 @@ function App() {
       const response = await fetch(
         `${backendUrl}/api/suggestions?q=${encodeURIComponent(query)}`
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch suggestions');
-      }
-
+      if (!response.ok) throw new Error('Failed to fetch suggestions');
       const data = await response.json();
 
       const titles = (data.suggestions || []).map((title) => ({
@@ -93,7 +89,7 @@ function App() {
     return () => clearTimeout(debounceTimer);
   }, [animeTitle, fetchSuggestions]);
 
-  const fetchAnimeData = async (url) => {
+  const fetchAnimeData = async (url, title = animeTitle) => {
     setLoading(true);
     setError('');
     setAnimeDetails(null);
@@ -101,9 +97,7 @@ function App() {
 
     try {
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Anime not found');
-      }
+      if (!response.ok) throw new Error('Anime not found');
       const data = await response.json();
 
       setAnimeDetails(data.anime);
@@ -122,7 +116,8 @@ function App() {
     }
 
     await fetchAnimeData(
-      `${backendUrl}/api/?anime=${encodeURIComponent(animeTitle)}`
+      `${backendUrl}/api/?anime=${encodeURIComponent(animeTitle)}`,
+      animeTitle
     );
   };
 
@@ -136,7 +131,20 @@ function App() {
     setShowSuggestions(false);
 
     await fetchAnimeData(
-      `${backendUrl}/api/?anime=${encodeURIComponent(randomTitle)}`
+      `${backendUrl}/api/?anime=${encodeURIComponent(randomTitle)}`,
+      randomTitle
+    );
+  };
+
+  const handleQuickSearch = async (title) => {
+    skipNextSuggestionFetchRef.current = true;
+    setAnimeTitle(title);
+    setSuggestions([]);
+    setShowSuggestions(false);
+
+    await fetchAnimeData(
+      `${backendUrl}/api/?anime=${encodeURIComponent(title)}`,
+      title
     );
   };
 
@@ -179,32 +187,39 @@ function App() {
 
   return (
     <div className="container">
-      <h1>go-anime-recommendation</h1>
+      <header className="app-header">
+        <h1>Tell us what you have been watching.</h1>
+        <p className="intro">
+          Find your next series through titles with a similar tone, cast of
+          genres and audience.
+        </p>
+      </header>
 
-      <div className="input-group">
+      <div className="search-panel">
+        <label htmlFor="anime-search">Search the anime catalog</label>
+        <div className="input-group">
         <input
+          id="anime-search"
           type="text"
           value={animeTitle}
           onChange={(e) => setAnimeTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSearch();
+          }}
           onFocus={() => {
             if (suggestions.length > 0) setShowSuggestions(true);
           }}
           onBlur={() => {
             setTimeout(() => setShowSuggestions(false), 150);
           }}
-          placeholder="Enter an anime title"
+          placeholder="Try a title, such as Naruto"
         />
         {showSuggestions && suggestions.length > 0 && (
           <ul className="suggestions-dropdown">
             {suggestions.map((anime) => (
               <li
                 key={anime.id}
-                onMouseDown={() => {
-                  skipNextSuggestionFetchRef.current = true;
-                  setAnimeTitle(anime.title);
-                  setSuggestions([]);
-                  setShowSuggestions(false);
-                }}
+                onMouseDown={() => handleQuickSearch(anime.title)}
               >
                 {anime.title}
               </li>
@@ -213,19 +228,49 @@ function App() {
         )}
 
         <button onClick={handleSearch} disabled={loading}>
-          {loading ? 'Loading...' : 'Get Recommendations'}
+          {loading ? 'Finding matches...' : 'Find matches'}
         </button>
         <button
           onClick={handleRandomAnime}
           disabled={loading}
           className="random-button"
         >
-          🎲 Random
+          Pick for me
         </button>
+        </div>
       </div>
 
-      {loading && <div className="spinner" />}
+      {loading && (
+        <div className="loading-state" role="status" aria-label="Loading">
+          <span className="loading-line" />
+          <span>Finding matches...</span>
+        </div>
+      )}
       {error && <div className="error">{error}</div>}
+
+      {!animeDetails && !loading && !error && (
+        <section className="empty-state" aria-label="Choose an anime to explore">
+          <div className="empty-mark" aria-hidden="true">
+            <span>01</span>
+            <strong>+</strong>
+          </div>
+          <div className="empty-copy">
+            <p className="eyebrow">Your next watch starts here</p>
+            <h2>One title is<br />all we need.</h2>
+            <p>
+              Pick a familiar favorite below, or search for the show you cannot
+              stop thinking about.
+            </p>
+            <div className="quick-searches" aria-label="Popular searches">
+              {['Naruto', 'Attack on Titan', 'Demon Slayer'].map((title) => (
+                <button key={title} onClick={() => handleQuickSearch(title)}>
+                  {title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {animeDetails && !loading && (
         <section className="anime-details" aria-label="Selected anime">
@@ -336,7 +381,13 @@ function App() {
 
       {recommendations.length > 0 && !loading && (
         <section className="recommendations" aria-label="Recommendations">
-          <h3>Recommendations</h3>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">If this one worked for you</p>
+              <h3>Try these next</h3>
+            </div>
+            <span>{recommendations.length} titles</span>
+          </div>
 
           <ul>
             {recommendations.map((anime, index) => {
@@ -451,26 +502,14 @@ function App() {
         </section>
       )}
 
-      <div className="container">
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{
-            position: 'fixed',
-            bottom: 8,
-            right: 8,
-            fontSize: '0.7rem',
-            color: '#666',
-            background: '#1a1a1a',
-            padding: '4px 8px',
-            borderRadius: 4,
-            zIndex: 9999,
-            cursor: 'pointer',
-          }}
-            onClick={() => setBackend(b => b === 'production' ? 'local' : 'production')}
-          >
-            {backend === 'production' ? '🌐 prod' : '💻 local'}
-          </div>
-        )}
-      </div>
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          className="environment-switch"
+          onClick={() => setBackend((b) => (b === 'production' ? 'local' : 'production'))}
+        >
+          `Backend: ${backend}`
+        </button>
+      )}
 
     </div>
   );
