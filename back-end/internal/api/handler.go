@@ -49,10 +49,10 @@ func (h *Handler) loadAnimeData() ([]anime.Anime, [][]float64, error) {
 		return nil, nil, err
 	}
 	weights := map[string]float64{
-		"score":       0.3,
-		"popularity":  0.2,
-		"genres":      1,
-		"demographic": 0.15,
+		"score":       0.35,
+		"popularity":  0.25,
+		"genres":      0.2,
+		"demographic": 0.1,
 		"studios":     0.1,
 	}
 	h.animeData = data

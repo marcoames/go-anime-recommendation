@@ -35,3 +35,14 @@ func TestEncodeFeaturesNormalizesPopularity(t *testing.T) {
 		t.Fatalf("better popularity rank should have higher normalized value: %#v", features)
 	}
 }
+
+func TestEncodeFeaturesDoesNotRewardMissingPopularity(t *testing.T) {
+	features := EncodeFeatures([]Feature{
+		{Score: 10, Popularity: 0},
+		{Score: 10, Popularity: 100},
+	}, map[string]float64{"score": 1, "popularity": 1})
+
+	if features[0][1] != 0 {
+		t.Fatalf("missing popularity should not receive a positive score: %#v", features)
+	}
+}

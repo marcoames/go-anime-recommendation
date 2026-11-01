@@ -1,6 +1,7 @@
 package recommendation
 
 import (
+	"math"
 	"sort"
 
 	"github.com/marcoames/go-anime-recommendation/internal/anime"
@@ -49,9 +50,13 @@ func EncodeFeatures(features []Feature, weights map[string]float64) [][]float64 
 
 	encoded := make([][]float64, 0, len(features))
 	for _, feature := range features {
+		popularityScore := 0.0
+		if feature.Popularity > 0 {
+			popularityScore = 1 - math.Log1p(float64(feature.Popularity))/math.Log1p(float64(maxPopularity))
+		}
 		vector := []float64{
 			(feature.Score / 10) * weights["score"],
-			(1 - float64(feature.Popularity)/float64(maxPopularity)) * weights["popularity"],
+			popularityScore * weights["popularity"],
 		}
 		vector = append(vector, encodeCategories(feature.Genres, genres, weights["genres"])...)
 		vector = append(vector, encodeCategories(feature.Demographics, demographics, weights["demographic"])...)
