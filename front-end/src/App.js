@@ -262,7 +262,7 @@ function App() {
               stop thinking about.
             </p>
             <div className="quick-searches" aria-label="Popular searches">
-              {['Naruto', 'Attack on Titan', 'Demon Slayer'].map((title) => (
+              {['Naruto', 'Attack on Titan', 'One Piece'].map((title) => (
                 <button key={title} onClick={() => handleQuickSearch(title)}>
                   {title}
                 </button>
