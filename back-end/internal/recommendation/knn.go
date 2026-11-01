@@ -20,8 +20,10 @@ func cosineSimilarity(v1, v2 []float64) float64 {
 	return dotProduct / (magV1 * magV2)
 }
 
-// Find recommendations based on the encoded features using KNN
 func FindRecommendations(features [][]float64, queryIndex int, k int) []int {
+	if queryIndex < 0 || queryIndex >= len(features) || k <= 0 {
+		return nil
+	}
 	query := features[queryIndex]
 	type neighbor struct {
 		index    int
@@ -30,21 +32,21 @@ func FindRecommendations(features [][]float64, queryIndex int, k int) []int {
 
 	var neighbors []neighbor
 
-	// Calculate the distance (similarity) between the query and all other points
 	for i, feature := range features {
 		if i == queryIndex {
 			continue
 		}
-		distance := cosineSimilarity(query, feature)
-		neighbors = append(neighbors, neighbor{index: i, distance: distance})
+		if len(feature) != len(query) {
+			continue
+		}
+		similarity := cosineSimilarity(query, feature)
+		neighbors = append(neighbors, neighbor{index: i, distance: similarity})
 	}
 
-	// Sort neighbors by distance in descending order (higher similarity is better)
 	sort.Slice(neighbors, func(i, j int) bool {
 		return neighbors[i].distance > neighbors[j].distance
 	})
 
-	// Collect the top-k neighbors
 	topK := make([]int, 0, k)
 	for i := 0; i < k && i < len(neighbors); i++ {
 		topK = append(topK, neighbors[i].index)

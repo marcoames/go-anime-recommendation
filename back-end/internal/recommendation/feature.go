@@ -1,84 +1,93 @@
 package recommendation
 
 import (
-	"strings"
+	"sort"
 
 	"github.com/marcoames/go-anime-recommendation/internal/anime"
 )
 
-func PrepareFeatures(animeData []anime.Anime) [][]interface{} {
-	var allFeatures [][]interface{}
-
-	// Extract the individual features
-	for i := 0; i < len(animeData); i++ {
-
-		score := animeData[i].Score
-		popularity := animeData[i].Popularity
-
-		// Extract genre names
-		genreNames := []string{}
-		for _, genre := range animeData[i].Genres {
-			genreNames = append(genreNames, genre.Name)
-		}
-
-		// Extract demographic names
-		demographicNames := []string{}
-		for _, demographic := range animeData[i].Demographics {
-			demographicNames = append(demographicNames, demographic.Name)
-		}
-
-		// Extract studio names
-		studioNames := []string{}
-		for _, studio := range animeData[i].Studios {
-			studioNames = append(studioNames, studio.Name)
-		}
-
-		// Combine all the features into a single slice
-		features := []interface{}{
-			score,
-			popularity,
-			strings.Join(genreNames, ", "),
-			strings.Join(demographicNames, ", "),
-			strings.Join(studioNames, ", "),
-		}
-
-		// Append the features to the list of all features
-		allFeatures = append(allFeatures, features)
-	}
-
-	return allFeatures
+type Feature struct {
+	Score        float64
+	Popularity   int
+	Genres       []string
+	Demographics []string
+	Studios      []string
 }
 
-func EncodeFeatures(allFeatures [][]interface{}, weights map[string]float64) [][]float64 {
-	encodedFeatures := [][]float64{} // Initialize a slice of slices
-
-	for _, features := range allFeatures {
-		// Extract features from each anime
-		score := features[0].(float64)
-		popularity := features[1].(int)
-		genres := features[2].(string)
-		demographics := features[3].(string)
-		studios := features[4].(string)
-
-		// Encode each feature by multiplying with its weight
-		scoreWeighted := score * weights["score"]
-		popularityWeighted := float64(popularity) * weights["popularity"]
-		genresWeighted := float64(len(strings.Split(genres, ", "))) * weights["genres"]
-		demographicsWeighted := float64(len(strings.Split(demographics, ", "))) * weights["demographic"]
-		studiosWeighted := float64(len(strings.Split(studios, ", "))) * weights["studios"]
-
-		// Combine the weighted features into a slice for the current anime
-		encodedAnime := []float64{
-			scoreWeighted,
-			popularityWeighted,
-			genresWeighted,
-			demographicsWeighted,
-			studiosWeighted,
+func PrepareFeatures(animeData []anime.Anime) []Feature {
+	features := make([]Feature, 0, len(animeData))
+	for _, item := range animeData {
+		feature := Feature{
+			Score:      item.Score,
+			Popularity: item.Popularity,
 		}
+		for _, genre := range item.Genres {
+			feature.Genres = append(feature.Genres, genre.Name)
+		}
+		for _, demographic := range item.Demographics {
+			feature.Demographics = append(feature.Demographics, demographic.Name)
+		}
+		for _, studio := range item.Studios {
+			feature.Studios = append(feature.Studios, studio.Name)
+		}
+		features = append(features, feature)
+	}
+	return features
+}
 
-		// Append the encoded anime features to the final encodedFeatures slice
-		encodedFeatures = append(encodedFeatures, encodedAnime)
+func EncodeFeatures(features []Feature, weights map[string]float64) [][]float64 {
+	maxPopularity := 1
+	for _, feature := range features {
+		if feature.Popularity > maxPopularity {
+			maxPopularity = feature.Popularity
+		}
 	}
 
-	return encodedFeatures
+	genres := collectCategories(features, func(feature Feature) []string { return feature.Genres })
+	demographics := collectCategories(features, func(feature Feature) []string { return feature.Demographics })
+	studios := collectCategories(features, func(feature Feature) []string { return feature.Studios })
+
+	encoded := make([][]float64, 0, len(features))
+	for _, feature := range features {
+		vector := []float64{
+			(feature.Score / 10) * weights["score"],
+			(1 - float64(feature.Popularity)/float64(maxPopularity)) * weights["popularity"],
+		}
+		vector = append(vector, encodeCategories(feature.Genres, genres, weights["genres"])...)
+		vector = append(vector, encodeCategories(feature.Demographics, demographics, weights["demographic"])...)
+		vector = append(vector, encodeCategories(feature.Studios, studios, weights["studios"])...)
+		encoded = append(encoded, vector)
+	}
+	return encoded
+}
+
+func collectCategories(features []Feature, selector func(Feature) []string) []string {
+	seen := make(map[string]struct{})
+	for _, feature := range features {
+		for _, category := range selector(feature) {
+			if category != "" {
+				seen[category] = struct{}{}
+			}
+		}
+	}
+	categories := make([]string, 0, len(seen))
+	for category := range seen {
+		categories = append(categories, category)
+	}
+	sort.Strings(categories)
+	return categories
+}
+
+func encodeCategories(values, categories []string, weight float64) []float64 {
+	valueSet := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		valueSet[value] = struct{}{}
+	}
+	encoded := make([]float64, len(categories))
+	for i, category := range categories {
+		if _, ok := valueSet[category]; ok {
+			encoded[i] = weight
+		}
+	}
+	return encoded
 }

@@ -1,4 +1,3 @@
-/* ── Reset & Base ─────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -33,14 +32,12 @@ body {
   line-height: 1.6;
 }
 
-/* ── Container ────────────────────────────────────── */
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px 72px;
 }
 
-/* ── Title ────────────────────────────────────────── */
 .container > h1 {
   text-align: center;
   font-size: 2.1rem;
@@ -52,7 +49,6 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ── Input Group ──────────────────────────────────── */
 .input-group {
   display: flex;
   justify-content: center;
@@ -153,7 +149,6 @@ body {
   box-shadow: 0 10px 22px rgba(106, 90, 205, 0.25);
 }
 
-/* ── Spinner ──────────────────────────────────────── */
 .spinner {
   width: 48px;
   height: 48px;
@@ -170,7 +165,6 @@ body {
   }
 }
 
-/* ── Error ────────────────────────────────────────── */
 .error {
   text-align: center;
   background: rgba(220, 50, 70, 0.12);
@@ -182,7 +176,6 @@ body {
   font-weight: 600;
 }
 
-/* ── Cards (shared) ───────────────────────────────── */
 .anime-details,
 .anime-item .anime-info {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
@@ -200,7 +193,6 @@ body {
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Selected Anime (hero card) ───────────────────── */
 .anime-details {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -232,7 +224,6 @@ body {
   font-size: 0.98rem;
 }
 
-/* ── Badges / quick stats ─────────────────────────── */
 .quick-stats {
   display: flex;
   flex-wrap: wrap;
@@ -253,7 +244,6 @@ body {
   font-weight: 750;
 }
 
-/* ── Synopsis (details/summary) ───────────────────── */
 .synopsis {
   margin: 12px 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -303,7 +293,6 @@ body {
   display: block;
 }
 
-/* ── Info grid (secondary metadata) ───────────────── */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -331,7 +320,6 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* ── Genre chips ──────────────────────────────────── */
 .genre-list {
   display: flex;
   flex-wrap: wrap;
@@ -349,7 +337,6 @@ body {
   white-space: nowrap;
 }
 
-/* ── Actions ──────────────────────────────────────── */
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -390,7 +377,6 @@ body {
   user-select: none;
 }
 
-/* ── Recommendations Section ──────────────────────── */
 .recommendations {
   animation: fadeUp 0.4s ease-out;
 }
@@ -419,7 +405,6 @@ body {
   gap: 20px;
 }
 
-/* ── Recommendation Card ──────────────────────────── */
 .anime-item .anime-info {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
@@ -457,7 +442,6 @@ body {
   font-size: 0.8rem;
 }
 
-/* ── Fade-up animation ────────────────────────────── */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -469,7 +453,6 @@ body {
   }
 }
 
-/* ── Responsive ───────────────────────────────────── */
 @media (max-width: 720px) {
   .anime-details {
     grid-template-columns: 1fr;
